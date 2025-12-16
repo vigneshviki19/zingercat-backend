@@ -1,16 +1,21 @@
 const mongoose = require("mongoose");
 
-const PostSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  description: { type: String, required: true },
-  category: {
-    type: String,
-    enum: ["news", "buy", "sell", "exchange", "help"],
-    required: true
+const postSchema = new mongoose.Schema(
+  {
+    content: {
+      type: String,
+      required: true
+    },
+    author: {
+      type: String,
+      required: true
+    },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    }
   },
-  price: { type: Number },
-  createdBy: { type: String }, // random username
-  createdAt: { type: Date, default: Date.now }
-});
+  { timestamps: true }
+);
 
-module.exports = mongoose.model("Post", PostSchema);
+module.exports = mongoose.model("Post", postSchema);
