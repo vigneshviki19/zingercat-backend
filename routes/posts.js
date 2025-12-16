@@ -1,40 +1,41 @@
 const express = require("express");
 const Post = require("../models/Post");
+const auth = require("../middleware/auth");
 
 const router = express.Router();
 
-// Create a post (news / buy / sell / exchange / help)
-router.post("/", async (req, res) => {
-  const { title, description, category, price, createdBy } = req.body;
-
+/**
+ * CREATE POST
+ */
+router.post("/", auth, async (req, res) => {
   try {
+    const { content } = req.body;
+
+    if (!content) {
+      return res.status(400).json({ message: "Post is empty" });
+    }
+
     const post = await Post.create({
-      title,
-      description,
-      category,
-      price,
-      createdBy
+      content,
+      author: req.user.username,
+      userId: req.user.id
     });
 
-    res.json(post);
+    res.status(201).json(post);
   } catch (err) {
-    res.status(400).json({ message: "Failed to create post" });
+    res.status(500).json({ message: "Post creation failed" });
   }
 });
 
-// Get all posts
+/**
+ * GET ALL POSTS
+ */
 router.get("/", async (req, res) => {
-  const posts = await Post.find().sort({ createdAt: -1 });
-  res.json(posts);
-});
-
-// Delete a post (used by admin later)
-router.delete("/:id", async (req, res) => {
   try {
-    await Post.findByIdAndDelete(req.params.id);
-    res.json({ message: "Post deleted" });
-  } catch (err) {
-    res.status(404).json({ message: "Post not found" });
+    const posts = await Post.find().sort({ createdAt: -1 });
+    res.json(posts);
+  } catch {
+    res.status(500).json({ message: "Failed to fetch posts" });
   }
 });
 
