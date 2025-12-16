@@ -7,11 +7,24 @@ const generateUsername = require("../utils/generateUsername");
 const router = express.Router();
 
 router.post("/register", async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  if (!email.endsWith(process.env.COLLEGE_DOMAIN)) {
-    return res.status(403).json({ message: "College email only" });
+    const user = new User({ email, password });
+    await user.save();
+
+    res.status(201).json({
+      success: true,
+      message: "User registered"
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      message: err.message
+    });
   }
+});
+
 
   const hashedPassword = await bcrypt.hash(password, 10);
   const username = generateUsername();
