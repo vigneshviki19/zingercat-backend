@@ -1,42 +1,45 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const http = require("http");
+const { Server } = require("socket.io");
 require("dotenv").config();
 
-// Routes
-const authRoutes = require("./routes/auth");
-const postRoutes = require("./routes/posts");
-const adminRoutes = require("./routes/admin");
-
 const app = express();
+const server = http.createServer(app);
 
-/* -------------------- MIDDLEWARE -------------------- */
-app.use(cors({
-  origin: "*", // later you can restrict to frontend URL
-}));
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
+
+app.use(cors());
 app.use(express.json());
 
-/* -------------------- DATABASE -------------------- */
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => {
-    console.error("❌ MongoDB connection error:", err);
-    process.exit(1);
+  .catch(console.error);
+
+/* SOCKET.IO */
+io.on("connection", (socket) => {
+  console.log("🟢 User connected:", socket.id);
+
+  socket.on("sendMessage", (message) => {
+    io.emit("receiveMessage", message);
   });
 
-/* -------------------- ROUTES -------------------- */
-app.use("/api/auth", authRoutes);
-app.use("/api/posts", postRoutes);
-app.use("/api/admin", adminRoutes);
+  socket.on("disconnect", () => {
+    console.log("🔴 User disconnected:", socket.id);
+  });
+});
 
-/* -------------------- HEALTH CHECK -------------------- */
 app.get("/", (req, res) => {
-  res.send("🐱 Zinger Cat backend is running");
+  res.send("Zinger Cat socket backend running 🐱");
 });
 
-/* -------------------- SERVER -------------------- */
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+server.listen(PORT, () =>
+  console.log(`🚀 Server running on port ${PORT}`)
+);
