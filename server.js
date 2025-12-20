@@ -1,45 +1,29 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const http = require("http");
-const { Server } = require("socket.io");
 require("dotenv").config();
 
+const authRoutes = require("./routes/auth");
+const postRoutes = require("./routes/posts");
+
 const app = express();
-const server = http.createServer(app);
 
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-  },
-});
-
-app.use(cors());
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
-  .catch(console.error);
+  .catch((err) => console.error(err));
 
-/* SOCKET.IO */
-io.on("connection", (socket) => {
-  console.log("🟢 User connected:", socket.id);
-
-  socket.on("sendMessage", (message) => {
-    io.emit("receiveMessage", message);
-  });
-
-  socket.on("disconnect", () => {
-    console.log("🔴 User disconnected:", socket.id);
-  });
-});
+app.use("/api/auth", authRoutes);
+app.use("/api/posts", postRoutes);
 
 app.get("/", (req, res) => {
-  res.send("Zinger Cat socket backend running 🐱");
+  res.send("Zinger Cat backend running 🐱");
 });
 
 const PORT = process.env.PORT || 10000;
-server.listen(PORT, () =>
+app.listen(PORT, () =>
   console.log(`🚀 Server running on port ${PORT}`)
 );
