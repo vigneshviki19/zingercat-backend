@@ -6,98 +6,69 @@ const generateUsername = require("../utils/generateUsername");
 
 const router = express.Router();
 
-/* =========================
-   REGISTER
-========================= */
+/* ================= REGISTER ================= */
 router.post("/register", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validation
     if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Email and password are required"
-      });
+      return res.status(400).json({ message: "Missing fields" });
     }
 
-    // Check if user exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: "User already exists"
-      });
+      return res.status(400).json({ message: "User already exists" });
     }
 
-    // Hash password
+    // 🔴 HASH PASSWORD
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Generate username
     const username = generateUsername();
 
-    // Create user
-    const user = new User({
+    const user = await User.create({
       email,
       password: hashedPassword,
-      username
+      username,
+      role: "user",
     });
 
-    await user.save();
-
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
-      message: "User registered successfully",
-      username
+      message: "User registered",
     });
-
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error"
-    });
+    res.status(500).json({ message: "Register failed" });
   }
 });
 
-/* =========================
-   LOGIN
-========================= */
+/* ================= LOGIN ================= */
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    // Validation
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password required" });
-    }
 
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) {
+    // 🔴 CORRECT PASSWORD CHECK
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
       return res.status(401).json({ message: "Invalid password" });
     }
 
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: user._id, role: user.role, username: user.username },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
     res.json({
-      success: true,
       token,
       username: user.username,
-      role: user.role
+      role: user.role,
     });
-
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Login failed" });
   }
 });
 
