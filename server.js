@@ -7,45 +7,42 @@ require("dotenv").config();
 
 const authRoutes = require("./routes/auth");
 const postRoutes = require("./routes/posts");
-const ChatMessage = require("./models/ChatMessage"); // 🔥 IMPORTANT
+const chatRoutes = require("./routes/chat");
+const ChatMessage = require("./models/ChatMessage");
 
 const app = express();
 const server = http.createServer(app);
 
+// Socket.IO setup
 const io = new Server(server, {
   cors: {
     origin: "*",
-    methods: ["GET", "POST"],
-  },
+    methods: ["GET", "POST"]
+  }
 });
 
 app.use(cors());
 app.use(express.json());
 
+// MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch(console.error);
 
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
+app.use("/api/chat", chatRoutes);
 
-/* ================= SOCKET.IO ================= */
-io.on("connection", async (socket) => {
+// Socket logic
+io.on("connection", (socket) => {
   console.log("🟢 User connected:", socket.id);
 
-  // 🔥 SEND OLD MESSAGES WHEN USER CONNECTS
-  const history = await ChatMessage.find()
-    .sort({ createdAt: 1 })
-    .limit(50);
-
-  socket.emit("chatHistory", history);
-
-  // 🔥 RECEIVE MESSAGE, SAVE, BROADCAST
   socket.on("sendMessage", async (data) => {
     const savedMessage = await ChatMessage.create({
       user: data.user,
-      text: data.text,
+      message: data.message
     });
 
     io.emit("receiveMessage", savedMessage);
