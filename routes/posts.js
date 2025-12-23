@@ -1,8 +1,9 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const auth = require("../middleware/auth");
 
-const mongoose = require("mongoose");
+// ✅ same registry method
 const Post = mongoose.model("Post");
 
 router.get("/", auth, async (req, res) => {
