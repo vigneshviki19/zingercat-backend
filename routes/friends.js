@@ -4,34 +4,36 @@ const auth = require("../middleware/auth");
 
 const router = express.Router();
 
-// Send friend request
+/* ➕ SEND FRIEND REQUEST */
 router.post("/request/:username", auth, async (req, res) => {
-  const from = req.user.username;
-  const to = req.params.username;
+  const fromUser = await User.findById(req.user.id);
+  const toUser = await User.findOne({ username: req.params.username });
 
-  if (from === to) return res.status(400).json({ message: "Cannot add yourself" });
+  if (!toUser) return res.status(404).json({ message: "User not found" });
+  if (toUser.friends.includes(fromUser._id))
+    return res.json({ message: "Already friends" });
 
-  const target = await User.findOne({ username: to });
-  if (!target) return res.status(404).json({ message: "User not found" });
-
-  if (!target.friendRequests.includes(from)) {
-    target.friendRequests.push(from);
-    await target.save();
+  if (!toUser.friendRequests.includes(fromUser._id)) {
+    toUser.friendRequests.push(fromUser._id);
+    await toUser.save();
   }
 
   res.json({ message: "Friend request sent" });
 });
 
-// Accept friend request
+/* ✅ ACCEPT FRIEND REQUEST */
 router.post("/accept/:username", auth, async (req, res) => {
-  const user = await User.findOne({ username: req.user.username });
-  const from = req.params.username;
+  const user = await User.findById(req.user.id);
+  const other = await User.findOne({ username: req.params.username });
 
-  user.friendRequests = user.friendRequests.filter(u => u !== from);
-  user.friends.push(from);
+  if (!other) return res.status(404).json({ message: "User not found" });
 
-  const other = await User.findOne({ username: from });
-  other.friends.push(user.username);
+  user.friendRequests = user.friendRequests.filter(
+    (id) => id.toString() !== other._id.toString()
+  );
+
+  user.friends.push(other._id);
+  other.friends.push(user._id);
 
   await user.save();
   await other.save();
@@ -39,15 +41,18 @@ router.post("/accept/:username", auth, async (req, res) => {
   res.json({ message: "Friend added" });
 });
 
-// Get friends list
-router.get("/list", auth, async (req, res) => {
-  const user = await User.findOne({ username: req.user.username });
+/* 👥 GET FRIEND LIST */
+router.get("/", auth, async (req, res) => {
+  const user = await User.findById(req.user.id).populate("friends", "username");
   res.json(user.friends);
 });
 
-// Get friend requests
+/* 🔔 GET FRIEND REQUESTS */
 router.get("/requests", auth, async (req, res) => {
-  const user = await User.findOne({ username: req.user.username });
+  const user = await User.findById(req.user.id).populate(
+    "friendRequests",
+    "username"
+  );
   res.json(user.friendRequests);
 });
 
