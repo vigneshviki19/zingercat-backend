@@ -8,6 +8,8 @@ require("dotenv").config();
 const authRoutes = require("./routes/auth");
 const postRoutes = require("./routes/posts");
 const friendRoutes = require("./routes/friends");
+const profileRoutes = require("./routes/profile");
+
 
 const ChatMessage = require("./models/ChatMessage");
 const PrivateMessage = require("./models/PrivateMessage");
@@ -38,7 +40,7 @@ mongoose
 app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/friends", friendRoutes);
-
+app.use("/api/profile", profileRoutes);
 // 🔥 SOCKET LOGIC
 io.on("connection", (socket) => {
   console.log("🟢 User connected:", socket.id);
