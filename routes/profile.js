@@ -1,41 +1,48 @@
 const express = require("express");
+const router = express.Router();
 const User = require("../models/User");
 const Post = require("../models/Post");
 const auth = require("../middleware/auth");
 
-const router = express.Router();
+/* =========================
+   SEARCH USERS
+   ========================= */
+router.get("/", auth, async (req, res) => {
+  try {
+    const q = req.query.q;
+    if (!q) return res.json([]);
 
-/**
- * GET USER PROFILE
- * /api/profile/:username
- */
+    const users = await User.find({
+      username: { $regex: q, $options: "i" }
+    }).select("username about");
+
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Search failed" });
+  }
+});
+
+/* =========================
+   USER PROFILE
+   ========================= */
 router.get("/:username", auth, async (req, res) => {
   try {
-    const { username } = req.params;
+    const user = await User.findOne({ username: req.params.username });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    const user = await User.findOne({ username }).lean();
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // ✅ SAFE defaults
-    const friendsCount = Array.isArray(user.friends)
-      ? user.friends.length
-      : 0;
-
-    const postsCount = await Post.countDocuments({
-      author: username
-    });
+    const postsCount = await Post.countDocuments({ author: user.username });
+    const friendsCount = user.friends?.length || 0;
 
     res.json({
       username: user.username,
       about: user.about || "",
-      friendsCount,
-      postsCount
+      postsCount,
+      friendsCount
     });
   } catch (err) {
-    console.error("PROFILE ERROR:", err);
-    res.status(500).json({ message: "Failed to load profile" });
+    console.error(err);
+    res.status(500).json({ message: "Profile failed" });
   }
 });
 
