@@ -7,13 +7,13 @@ require("dotenv").config();
 
 const authRoutes = require("./routes/auth");
 const postRoutes = require("./routes/posts");
-const chatRoutes = require("./routes/chat");
+
 const ChatMessage = require("./models/ChatMessage");
+const PrivateMessage = require("./models/PrivateMessage");
 
 const app = express();
 const server = http.createServer(app);
 
-// Socket.IO setup
 const io = new Server(server, {
   cors: {
     origin: "*",
@@ -24,28 +24,32 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
-// MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch(console.error);
 
-// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
-app.use("/api/chat", chatRoutes);
 
-// Socket logic
+/* ================= SOCKET.IO ================= */
 io.on("connection", (socket) => {
   console.log("🟢 User connected:", socket.id);
 
-  socket.on("sendMessage", async (data) => {
-    const savedMessage = await ChatMessage.create({
-      user: data.user,
-      message: data.message
-    });
+  // JOIN PRIVATE ROOM
+  socket.on("joinPrivate", async ({ roomId }) => {
+    socket.join(roomId);
 
-    io.emit("receiveMessage", savedMessage);
+    const history = await PrivateMessage.find({ roomId })
+      .sort({ createdAt: 1 });
+
+    socket.emit("privateHistory", history);
+  });
+
+  // SEND PRIVATE MESSAGE
+  socket.on("sendPrivate", async (data) => {
+    const saved = await PrivateMessage.create(data);
+    io.to(data.roomId).emit("receivePrivate", saved);
   });
 
   socket.on("disconnect", () => {
