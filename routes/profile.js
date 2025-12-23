@@ -1,40 +1,29 @@
 const express = require("express");
-const User = require("../models/User");
-const Post = require("../models/Post");
-const auth = require("../middleware/auth");
-
 const router = express.Router();
 
-/**
- * GET USER PROFILE
- * /api/profile/:username
- */
+const User = require("../models/User");
+const PostModel = require("../models/Post"); // 👈 IMPORTANT NAME
+const auth = require("../middleware/auth");
+
 router.get("/:username", auth, async (req, res) => {
   try {
     const { username } = req.params;
 
-    // find user
     const user = await User.findOne({ username }).lean();
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // count posts
-    const postCount = await Post.countDocuments({
+    // 👇 DO NOT USE Post (name collision safe)
+    const postCount = await PostModel.countDocuments({
       author: username
     });
-
-    // safe counts
-    const friendsCount = Array.isArray(user.friends)
-      ? user.friends.length
-      : 0;
 
     res.json({
       username: user.username,
       about: user.about || "",
-      friendsCount,
-      postCount,
-      friends: user.friends || []
+      friendsCount: Array.isArray(user.friends) ? user.friends.length : 0,
+      postCount
     });
   } catch (err) {
     console.error("PROFILE ERROR:", err);
