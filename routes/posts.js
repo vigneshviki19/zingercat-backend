@@ -1,10 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const mongoose = require("mongoose");
 const auth = require("../middleware/auth");
 
-// ✅ same registry method
-const Post = mongoose.model("Post");
+// ✅ DIRECT MODEL IMPORT (CORRECT WAY)
+const Post = require("../models/Post");
 
 router.get("/", auth, async (req, res) => {
   try {
@@ -18,13 +17,12 @@ router.get("/", auth, async (req, res) => {
 
 router.post("/", auth, async (req, res) => {
   try {
-    const post = new Post({
+    const post = await Post.create({
       content: req.body.content,
       author: req.user.username,
       userId: req.user.id
     });
 
-    await post.save();
     res.json(post);
   } catch (err) {
     console.error("POST CREATE ERROR:", err);
