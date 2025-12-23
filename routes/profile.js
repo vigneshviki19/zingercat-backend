@@ -5,7 +5,24 @@ const auth = require("../middleware/auth");
 
 const router = express.Router();
 
-/* GET USER PROFILE */
+/* 🔍 SEARCH USERS */
+router.get("/search", auth, async (req, res) => {
+  try {
+    const q = req.query.q;
+    if (!q) return res.json([]);
+
+    const users = await User.find({
+      username: { $regex: q, $options: "i" }
+    }).select("username about");
+
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Search failed" });
+  }
+});
+
+/* 👤 GET USER PROFILE */
 router.get("/:username", auth, async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username });
