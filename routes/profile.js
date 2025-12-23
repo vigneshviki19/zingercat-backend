@@ -4,45 +4,38 @@ const User = require("../models/User");
 const Post = require("../models/Post");
 const auth = require("../middleware/auth");
 
-/* =========================
-   SEARCH USERS
-   ========================= */
+// 🔍 Search users (Instagram style)
 router.get("/", auth, async (req, res) => {
-  try {
-    const q = req.query.q;
-    if (!q) return res.json([]);
+  const q = req.query.q;
+  if (!q) return res.json([]);
 
-    const users = await User.find({
-      username: { $regex: q, $options: "i" }
-    }).select("username about");
+  const users = await User.find({
+    username: { $regex: q, $options: "i" }
+  }).select("username about");
 
-    res.json(users);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Search failed" });
-  }
+  res.json(users);
 });
 
-/* =========================
-   USER PROFILE
-   ========================= */
+// 👤 Get user profile
 router.get("/:username", auth, async (req, res) => {
   try {
-    const user = await User.findOne({ username: req.params.username });
+    const user = await User.findOne({ username: req.params.username })
+      .populate("friends", "username");
+
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const postsCount = await Post.countDocuments({ author: user.username });
-    const friendsCount = user.friends?.length || 0;
+    const postCount = await Post.countDocuments({ author: user.username });
 
     res.json({
       username: user.username,
       about: user.about || "",
-      postsCount,
-      friendsCount
+      friendsCount: user.friends.length,
+      postCount,
+      friends: user.friends.map(f => f.username)
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Profile failed" });
+    res.status(500).json({ message: "Profile error" });
   }
 });
 
