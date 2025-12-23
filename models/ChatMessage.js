@@ -4,12 +4,12 @@ const chatMessageSchema = new mongoose.Schema(
   {
     user: {
       type: String,
-      required: true,
+      required: true
     },
-    text: {
+    message: {
       type: String,
-      required: true,
-    },
+      required: true
+    }
   },
   { timestamps: true }
 );
