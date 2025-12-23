@@ -7,16 +7,16 @@ require("dotenv").config();
 
 const authRoutes = require("./routes/auth");
 const postRoutes = require("./routes/posts");
+const friendRoutes = require("./routes/friends");
 
 const ChatMessage = require("./models/ChatMessage");
 const PrivateMessage = require("./models/PrivateMessage");
-const friendRoutes = require("./routes/friends");
-app.use("/api/friends", friendRoutes);
 
-
+// 🔥 CREATE APP FIRST
 const app = express();
 const server = http.createServer(app);
 
+// 🔥 SOCKET.IO
 const io = new Server(server, {
   cors: {
     origin: "*",
@@ -24,32 +24,45 @@ const io = new Server(server, {
   }
 });
 
+// 🔥 MIDDLEWARE
 app.use(cors());
 app.use(express.json());
 
+// 🔥 DATABASE
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch(console.error);
 
+// 🔥 ROUTES (AFTER app IS CREATED)
 app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
+app.use("/api/friends", friendRoutes);
 
-/* ================= SOCKET.IO ================= */
+// 🔥 SOCKET LOGIC
 io.on("connection", (socket) => {
   console.log("🟢 User connected:", socket.id);
 
-  // JOIN PRIVATE ROOM
+  // PUBLIC CHAT
+  socket.on("sendMessage", async (data) => {
+    const saved = await ChatMessage.create({
+      user: data.user,
+      message: data.message
+    });
+    io.emit("receiveMessage", saved);
+  });
+
+  // PRIVATE CHAT
   socket.on("joinPrivate", async ({ roomId }) => {
     socket.join(roomId);
 
-    const history = await PrivateMessage.find({ roomId })
-      .sort({ createdAt: 1 });
+    const history = await PrivateMessage.find({ roomId }).sort({
+      createdAt: 1
+    });
 
     socket.emit("privateHistory", history);
   });
 
-  // SEND PRIVATE MESSAGE
   socket.on("sendPrivate", async (data) => {
     const saved = await PrivateMessage.create(data);
     io.to(data.roomId).emit("receivePrivate", saved);
@@ -60,10 +73,12 @@ io.on("connection", (socket) => {
   });
 });
 
+// 🔥 TEST ROUTE
 app.get("/", (req, res) => {
   res.send("Zinger Cat backend running 🐱");
 });
 
+// 🔥 START SERVER
 const PORT = process.env.PORT || 10000;
 server.listen(PORT, () =>
   console.log(`🚀 Server running on port ${PORT}`)
