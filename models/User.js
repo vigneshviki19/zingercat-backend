@@ -5,6 +5,11 @@ const userSchema = new mongoose.Schema({
   password: String,
   username: { type: String, unique: true },
 
+  about: {
+    type: String,
+    default: ""
+  },
+
   friends: {
     type: [String],
     default: []
