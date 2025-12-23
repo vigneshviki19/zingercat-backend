@@ -10,6 +10,9 @@ const postRoutes = require("./routes/posts");
 
 const ChatMessage = require("./models/ChatMessage");
 const PrivateMessage = require("./models/PrivateMessage");
+const friendRoutes = require("./routes/friends");
+app.use("/api/friends", friendRoutes);
+
 
 const app = express();
 const server = http.createServer(app);
