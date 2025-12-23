@@ -4,7 +4,7 @@ const auth = require("../middleware/auth");
 
 const router = express.Router();
 
-/* Send friend request */
+// Send friend request
 router.post("/request/:username", auth, async (req, res) => {
   const from = req.user.username;
   const to = req.params.username;
@@ -14,16 +14,15 @@ router.post("/request/:username", auth, async (req, res) => {
   const target = await User.findOne({ username: to });
   if (!target) return res.status(404).json({ message: "User not found" });
 
-  if (target.friendRequests.includes(from))
-    return res.json({ message: "Request already sent" });
-
-  target.friendRequests.push(from);
-  await target.save();
+  if (!target.friendRequests.includes(from)) {
+    target.friendRequests.push(from);
+    await target.save();
+  }
 
   res.json({ message: "Friend request sent" });
 });
 
-/* Accept friend request */
+// Accept friend request
 router.post("/accept/:username", auth, async (req, res) => {
   const user = await User.findOne({ username: req.user.username });
   const from = req.params.username;
@@ -40,13 +39,13 @@ router.post("/accept/:username", auth, async (req, res) => {
   res.json({ message: "Friend added" });
 });
 
-/* Get friends */
+// Get friends list
 router.get("/list", auth, async (req, res) => {
   const user = await User.findOne({ username: req.user.username });
   res.json(user.friends);
 });
 
-/* Get requests */
+// Get friend requests
 router.get("/requests", auth, async (req, res) => {
   const user = await User.findOne({ username: req.user.username });
   res.json(user.friendRequests);
