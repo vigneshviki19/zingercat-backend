@@ -1,31 +1,44 @@
 const express = require("express");
-const router = express.Router();
 const User = require("../models/User");
-const Post = require("../models/Post"); // 🔥 FIXED
+const Post = require("../models/Post");
 const auth = require("../middleware/auth");
 
+const router = express.Router();
+
+/**
+ * GET USER PROFILE
+ * /api/profile/:username
+ */
 router.get("/:username", auth, async (req, res) => {
   try {
-    const user = await User.findOne({ username: req.params.username });
+    const { username } = req.params;
 
+    // find user
+    const user = await User.findOne({ username }).lean();
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // ✅ SAFE POST COUNT
+    // count posts
     const postCount = await Post.countDocuments({
-      author: user.username
+      author: username
     });
+
+    // safe counts
+    const friendsCount = Array.isArray(user.friends)
+      ? user.friends.length
+      : 0;
 
     res.json({
       username: user.username,
       about: user.about || "",
+      friendsCount,
       postCount,
-      friendsCount: user.friends?.length || 0
+      friends: user.friends || []
     });
   } catch (err) {
     console.error("PROFILE ERROR:", err);
-    res.status(500).json({ message: "Profile failed" });
+    res.status(500).json({ message: "Failed to load profile" });
   }
 });
 
