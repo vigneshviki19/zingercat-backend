@@ -1,13 +1,12 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 
 const User = require("../models/User");
-
-// 🔥 force-load model correctly
-const mongoose = require("mongoose");
-const Post = mongoose.model("Post");
-
 const auth = require("../middleware/auth");
+
+// ✅ get model from mongoose registry
+const Post = mongoose.model("Post");
 
 router.get("/:username", auth, async (req, res) => {
   try {
@@ -18,9 +17,7 @@ router.get("/:username", auth, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const postCount = await Post.countDocuments({
-      author: username
-    });
+    const postCount = await Post.countDocuments({ author: username });
 
     res.json({
       username: user.username,
