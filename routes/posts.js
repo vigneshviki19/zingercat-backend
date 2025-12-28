@@ -1,40 +1,35 @@
 const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
-const mongoose = require("mongoose");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 
-// ✅ ENSURE uploads folder exists (SAFE)
+// ✅ IMPORT MODEL DIRECTLY (THIS FIXES EVERYTHING)
+const Post = require("../models/Post");
+
+// ---------- UPLOAD SETUP ----------
 const uploadDir = path.join(__dirname, "..", "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
 }
 
-// ✅ Multer config
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  }
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) =>
+    cb(null, Date.now() + "-" + file.originalname),
 });
 
 const upload = multer({ storage });
 
-// ✅ Model
-const Post = mongoose.model("Post");
-
-/* ---------------- CREATE POST WITH IMAGE ---------------- */
+// ---------- CREATE POST ----------
 router.post("/", auth, upload.single("image"), async (req, res) => {
   try {
     const post = new Post({
       content: req.body.content,
       author: req.user.username,
       userId: req.user.id,
-      image: req.file ? `/uploads/${req.file.filename}` : null
+      image: req.file ? `/uploads/${req.file.filename}` : null,
     });
 
     await post.save();
@@ -45,7 +40,7 @@ router.post("/", auth, upload.single("image"), async (req, res) => {
   }
 });
 
-/* ---------------- GET ALL POSTS ---------------- */
+// ---------- GET POSTS ----------
 router.get("/", auth, async (req, res) => {
   try {
     const posts = await Post.find().sort({ createdAt: -1 });
