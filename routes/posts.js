@@ -1,70 +1,67 @@
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
 const auth = require("../middleware/auth");
 const Post = require("../models/Post");
 
-// multer config
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+/* ===========================
+   ENSURE uploads/ EXISTS
+=========================== */
+const uploadDir = path.join(__dirname, "..", "uploads");
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+/* ===========================
+   MULTER CONFIG
+=========================== */
 const storage = multer.diskStorage({
-  destination: "uploads/",
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
+    const safeName = file.originalname.replace(/\s+/g, "_");
+    cb(null, Date.now() + "-" + safeName);
   }
 });
+
 const upload = multer({ storage });
 
-/* GET ALL POSTS */
+/* ===========================
+   GET POSTS
+=========================== */
 router.get("/", auth, async (req, res) => {
-  const posts = await Post.find().sort({ createdAt: -1 });
-  res.json(posts);
-});
-
-/* CREATE POST */
-router.post("/", auth, upload.single("image"), async (req, res) => {
-  const post = new Post({
-    content: req.body.content,
-    author: req.user.username,
-    image: req.file ? `/uploads/${req.file.filename}` : null
-  });
-
-  await post.save();
-  res.json(post);
-});
-
-/* LIKE / UNLIKE */
-router.post("/:id/like", auth, async (req, res) => {
-  const post = await Post.findById(req.params.id);
-  const user = req.user.username;
-
-  if (post.likes.includes(user)) {
-    post.likes = post.likes.filter(u => u !== user);
-  } else {
-    post.likes.push(user);
+  try {
+    const posts = await Post.find().sort({ createdAt: -1 });
+    res.json(posts);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to load posts" });
   }
-
-  await post.save();
-  res.json(post.likes.length);
 });
 
-/* COMMENT */
-router.post("/:id/comment", auth, async (req, res) => {
-  const post = await Post.findById(req.params.id);
+/* ===========================
+   CREATE POST
+=========================== */
+router.post("/", auth, upload.single("image"), async (req, res) => {
+  try {
+    const post = new Post({
+      content: req.body.content,
+      author: req.user.username,
+      userId: req.user.id,
+      image: req.file ? `/uploads/${req.file.filename}` : null
+    });
 
-  post.comments.push({
-    user: req.user.username,
-    text: req.body.text
-  });
-
-  await post.save();
-  res.json(post.comments);
-});
-
-/* SHARE */
-router.post("/:id/share", auth, async (req, res) => {
-  const post = await Post.findById(req.params.id);
-  post.shares += 1;
-  await post.save();
-  res.json({ shares: post.shares });
+    await post.save();
+    res.json(post);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to create post" });
+  }
 });
 
 module.exports = router;
