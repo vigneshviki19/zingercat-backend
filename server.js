@@ -17,6 +17,8 @@ const PrivateMessage = require("./models/PrivateMessage");
 // 🔥 CREATE APP FIRST
 const app = express();
 const server = http.createServer(app);
+app.use("/uploads", express.static("uploads"));
+
 
 // 🔥 SOCKET.IO
 const io = new Server(server, {
