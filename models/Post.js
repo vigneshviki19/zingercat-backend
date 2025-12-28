@@ -6,6 +6,10 @@ const postSchema = new mongoose.Schema(
       type: String,
       required: true
     },
+    image: {
+      type: String, // image URL
+      default: ""
+    },
     author: {
       type: String, // username
       required: true
