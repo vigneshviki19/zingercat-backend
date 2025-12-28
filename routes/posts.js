@@ -1,46 +1,46 @@
 const express = require("express");
 const router = express.Router();
-const auth = require("../middleware/auth");
 const multer = require("multer");
-const path = require("path");
 const Post = require("../models/Post");
+const auth = require("../middleware/auth");
 
-// ✅ storage (DO NOT CREATE DIR MANUALLY)
+// Multer config
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
+  destination: (req, file, cb) => {
+    cb(null, "uploads");
   },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + "-" + file.originalname.replace(/\s+/g, "_"));
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + "-" + file.originalname.replace(/\s+/g, "_");
+    cb(null, uniqueName);
   }
 });
 
 const upload = multer({ storage });
 
-/* ---------------- CREATE POST ---------------- */
+// CREATE POST
 router.post("/", auth, upload.single("image"), async (req, res) => {
   try {
-    const post = await Post.create({
+    const newPost = new Post({
       content: req.body.content,
-      image: req.file ? `/uploads/${req.file.filename}` : "",
       author: req.user.username,
-      userId: req.user.id
+      userId: req.user.id,
+      image: req.file ? req.file.filename : null
     });
 
-    res.json(post);
+    await newPost.save();
+    res.json(newPost);
   } catch (err) {
-    console.error("CREATE POST ERROR:", err);
+    console.error(err);
     res.status(500).json({ message: "Post failed" });
   }
 });
 
-/* ---------------- GET POSTS ---------------- */
+// GET POSTS
 router.get("/", auth, async (req, res) => {
   try {
     const posts = await Post.find().sort({ createdAt: -1 });
     res.json(posts);
   } catch (err) {
-    console.error("GET POSTS ERROR:", err);
     res.status(500).json({ message: "Failed to fetch posts" });
   }
 });
