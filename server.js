@@ -2,23 +2,23 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const http = require("http");
+const path = require("path");
 const { Server } = require("socket.io");
 require("dotenv").config();
 
+// ROUTES
 const authRoutes = require("./routes/auth");
 const postRoutes = require("./routes/posts");
 const friendRoutes = require("./routes/friends");
 const profileRoutes = require("./routes/profile");
 
-
+// MODELS (for socket)
 const ChatMessage = require("./models/ChatMessage");
 const PrivateMessage = require("./models/PrivateMessage");
 
 // 🔥 CREATE APP FIRST
 const app = express();
 const server = http.createServer(app);
-
-
 
 // 🔥 SOCKET.IO
 const io = new Server(server, {
@@ -31,19 +31,25 @@ const io = new Server(server, {
 // 🔥 MIDDLEWARE
 app.use(cors());
 app.use(express.json());
-app.use("/uploads", express.static("uploads"));
+
+// ✅ SERVE UPLOADS (IMPORTANT)
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"))
+);
 
 // 🔥 DATABASE
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
-  .catch(console.error);
+  .catch((err) => console.error("❌ Mongo error:", err));
 
-// 🔥 ROUTES (AFTER app IS CREATED)
+// 🔥 ROUTES
 app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/friends", friendRoutes);
 app.use("/api/profile", profileRoutes);
+
 // 🔥 SOCKET LOGIC
 io.on("connection", (socket) => {
   console.log("🟢 User connected:", socket.id);
@@ -85,6 +91,6 @@ app.get("/", (req, res) => {
 
 // 🔥 START SERVER
 const PORT = process.env.PORT || 10000;
-server.listen(PORT, () =>
-  console.log(`🚀 Server running on port ${PORT}`)
-);
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
