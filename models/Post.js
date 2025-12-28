@@ -1,21 +1,13 @@
 const mongoose = require("mongoose");
 
-const commentSchema = new mongoose.Schema({
-  user: String,
-  text: String,
-  createdAt: { type: Date, default: Date.now }
-});
-
 const postSchema = new mongoose.Schema(
   {
-    content: String,
+    content: { type: String, required: true },
     author: String,
+    department: String,
+    college: String,
     image: String,
-
-    // 🔥 FEATURES YOU WANT
-    likes: { type: [String], default: [] }, // usernames
-    comments: { type: [commentSchema], default: [] },
-    shares: { type: Number, default: 0 }
+    likes: { type: Number, default: 0 }
   },
   { timestamps: true }
 );
