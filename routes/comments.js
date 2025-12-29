@@ -3,38 +3,23 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 const Comment = require("../models/Comment");
 
-/* =========================
-   GET COMMENTS FOR POST
-========================= */
+/* GET comments for a post */
 router.get("/:postId", auth, async (req, res) => {
-  try {
-    const comments = await Comment.find({ postId: req.params.postId })
-      .sort({ createdAt: 1 });
-
-    res.json(comments);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to load comments" });
-  }
+  const comments = await Comment.find({ postId: req.params.postId })
+    .sort({ createdAt: 1 });
+  res.json(comments);
 });
 
-/* =========================
-   ADD COMMENT / REPLY
-========================= */
+/* ADD comment or reply */
 router.post("/", auth, async (req, res) => {
-  try {
-    const comment = new Comment({
-      postId: req.body.postId,
-      content: req.body.content,
-      parentComment: req.body.parentComment || null,
-      author: req.user.username,
-      userId: req.user.id
-    });
+  const comment = await Comment.create({
+    postId: req.body.postId,
+    content: req.body.content,
+    parentComment: req.body.parentComment || null,
+    author: req.user.username
+  });
 
-    await comment.save();
-    res.json(comment);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to add comment" });
-  }
+  res.json(comment);
 });
 
 module.exports = router;
