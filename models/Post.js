@@ -4,10 +4,10 @@ const postSchema = new mongoose.Schema(
   {
     content: {
       type: String,
-      required: true
+      default: ""
     },
     image: {
-      type: String, // image URL
+      type: String, // Cloudinary image URL
       default: ""
     },
     author: {
