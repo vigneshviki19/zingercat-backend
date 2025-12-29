@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const mongoose = require("mongoose");
 const auth = require("../middleware/auth");
+const Post = require("../models/Post");
 
 const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
@@ -30,12 +30,7 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage });
 
 /* =========================
-   POST MODEL
-========================= */
-const Post = mongoose.model("Post");
-
-/* =========================
-   GET ALL POSTS (FEED)
+   GET ALL POSTS
 ========================= */
 router.get("/", auth, async (req, res) => {
   try {
@@ -48,7 +43,7 @@ router.get("/", auth, async (req, res) => {
 });
 
 /* =========================
-   CREATE POST (TEXT + IMAGE)
+   CREATE POST
 ========================= */
 router.post("/", auth, upload.single("image"), async (req, res) => {
   try {
