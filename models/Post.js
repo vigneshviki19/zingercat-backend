@@ -4,7 +4,7 @@ const postSchema = new mongoose.Schema(
   {
     content: {
       type: String,
-      required: true
+      default: ""
     },
     image: {
       type: String,
@@ -19,7 +19,7 @@ const postSchema = new mongoose.Schema(
       required: true
     },
     likes: {
-      type: [String], // usernames who liked
+      type: [String], // store userIds
       default: []
     }
   },
