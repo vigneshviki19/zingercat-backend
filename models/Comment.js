@@ -11,10 +11,6 @@ const commentSchema = new mongoose.Schema(
       type: String,
       required: true
     },
-    userId: {
-      type: String,
-      required: true
-    },
     content: {
       type: String,
       required: true
@@ -22,7 +18,7 @@ const commentSchema = new mongoose.Schema(
     parentComment: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Comment",
-      default: null // null = top-level comment
+      default: null
     }
   },
   { timestamps: true }
