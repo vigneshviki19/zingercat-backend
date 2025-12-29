@@ -17,7 +17,7 @@ cloudinary.config({
 });
 
 /* =========================
-   MULTER STORAGE
+   MULTER (CLOUDINARY)
 ========================= */
 const storage = new CloudinaryStorage({
   cloudinary,
@@ -30,7 +30,7 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage });
 
 /* =========================
-   GET ALL POSTS
+   GET ALL POSTS (FEED)
 ========================= */
 router.get("/", auth, async (req, res) => {
   try {
@@ -43,18 +43,18 @@ router.get("/", auth, async (req, res) => {
 });
 
 /* =========================
-   CREATE POST
+   CREATE POST (TEXT + IMAGE)
 ========================= */
 router.post("/", auth, upload.single("image"), async (req, res) => {
   try {
-    const post = new Post({
+    const post = await Post.create({
       content: req.body.content || "",
       image: req.file ? req.file.path : "",
       author: req.user.username,
-      userId: req.user.id
+      userId: req.user.id,
+      likes: []
     });
 
-    await post.save();
     res.json(post);
   } catch (err) {
     console.error("CREATE POST ERROR:", err);
@@ -63,19 +63,27 @@ router.post("/", auth, upload.single("image"), async (req, res) => {
 });
 
 /* =========================
-   LIKE POST
+   LIKE / UNLIKE POST (TOGGLE)
 ========================= */
 router.post("/:id/like", auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ message: "Post not found" });
 
-    post.likes += 1;
-    await post.save();
+    const username = req.user.username;
 
-    res.json({ likes: post.likes });
+    if (post.likes.includes(username)) {
+      // unlike
+      post.likes = post.likes.filter((u) => u !== username);
+    } else {
+      // like
+      post.likes.push(username);
+    }
+
+    await post.save();
+    res.json(post);
   } catch (err) {
-    console.error("LIKE ERROR:", err);
+    console.error("LIKE POST ERROR:", err);
     res.status(500).json({ message: "Failed to like post" });
   }
 });
