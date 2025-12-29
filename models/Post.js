@@ -4,14 +4,14 @@ const postSchema = new mongoose.Schema(
   {
     content: {
       type: String,
-      default: ""
+      required: true
     },
     image: {
-      type: String, // Cloudinary image URL
+      type: String,
       default: ""
     },
     author: {
-      type: String, // username
+      type: String,
       required: true
     },
     userId: {
@@ -19,8 +19,8 @@ const postSchema = new mongoose.Schema(
       required: true
     },
     likes: {
-      type: Number,
-      default: 0
+      type: [String], // usernames who liked
+      default: []
     }
   },
   { timestamps: true }
