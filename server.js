@@ -11,6 +11,8 @@ const authRoutes = require("./routes/auth");
 const postRoutes = require("./routes/posts");
 const friendRoutes = require("./routes/friends");
 const profileRoutes = require("./routes/profile");
+const commentRoutes = require("./routes/comments");
+
 
 // MODELS (for socket)
 const ChatMessage = require("./models/ChatMessage");
@@ -44,6 +46,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/friends", friendRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/comments", commentRoutes);
+
 
 // 🔥 SOCKET LOGIC
 io.on("connection", (socket) => {
