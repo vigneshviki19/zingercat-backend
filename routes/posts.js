@@ -1,17 +1,18 @@
 const express = require("express");
-const router = express.Router();
 const multer = require("multer");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("../config/cloudinary");
 const Post = require("../models/Post");
 const auth = require("../middleware/auth");
 
-// Multer config
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads");
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + "-" + file.originalname.replace(/\s+/g, "_");
-    cb(null, uniqueName);
+const router = express.Router();
+
+// Cloudinary storage
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "zingercat_posts",
+    allowed_formats: ["jpg", "png", "jpeg"]
   }
 });
 
@@ -20,29 +21,30 @@ const upload = multer({ storage });
 // CREATE POST
 router.post("/", auth, upload.single("image"), async (req, res) => {
   try {
-    const newPost = new Post({
-      content: req.body.content,
+    const post = await Post.create({
       author: req.user.username,
-      userId: req.user.id,
-      image: req.file ? req.file.filename : null
+      content: req.body.content,
+      image: req.file ? req.file.path : null
     });
 
-    await newPost.save();
-    res.json(newPost);
+    res.json(post);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Post failed" });
+    res.status(500).json({ message: err.message });
   }
 });
 
-// GET POSTS
-router.get("/", auth, async (req, res) => {
-  try {
-    const posts = await Post.find().sort({ createdAt: -1 });
-    res.json(posts);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch posts" });
-  }
+// GET FEED
+router.get("/", async (req, res) => {
+  const posts = await Post.find().sort({ createdAt: -1 });
+  res.json(posts);
+});
+
+// LIKE
+router.post("/:id/like", auth, async (req, res) => {
+  const post = await Post.findById(req.params.id);
+  post.likes += 1;
+  await post.save();
+  res.json(post);
 });
 
 module.exports = router;
