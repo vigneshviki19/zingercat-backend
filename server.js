@@ -32,11 +32,6 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
-// ✅ SERVE UPLOADS (IMPORTANT)
-app.use(
-  "/uploads",
-  express.static(path.join(__dirname, "uploads"))
-);
 
 // 🔥 DATABASE
 mongoose
