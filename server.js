@@ -47,6 +47,8 @@ app.use("/api/posts", postRoutes);
 app.use("/api/friends", friendRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/comments", commentRoutes);
+app.use("/api/comments", require("./routes/comments"));
+
 
 
 // 🔥 SOCKET LOGIC
