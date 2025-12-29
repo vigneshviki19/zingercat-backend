@@ -68,24 +68,27 @@ router.post("/", auth, upload.single("image"), async (req, res) => {
 router.post("/:id/like", auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
-    if (!post) return res.status(404).json({ message: "Post not found" });
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
 
-    const username = req.user.username;
+    const userId = req.user.id;
 
-    if (post.likes.includes(username)) {
-      // unlike
-      post.likes = post.likes.filter((u) => u !== username);
+    if (post.likes.includes(userId)) {
+      // UNLIKE
+      post.likes = post.likes.filter((id) => id !== userId);
     } else {
-      // like
-      post.likes.push(username);
+      // LIKE
+      post.likes.push(userId);
     }
 
     await post.save();
-    res.json(post);
+    res.json({ likes: post.likes.length });
   } catch (err) {
     console.error("LIKE POST ERROR:", err);
-    res.status(500).json({ message: "Failed to like post" });
+    res.status(500).json({ message: "Like failed" });
   }
 });
+
 
 module.exports = router;
