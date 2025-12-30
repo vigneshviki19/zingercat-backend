@@ -1,17 +1,63 @@
 const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema({
-  username: { type: String, unique: true },
-  email: { type: String, unique: true },
-  password: String,
+  username: {
+    type: String,
+    unique: true,
+    required: true
+  },
 
-  name: String,
-  department: String,
-  year: String,
-  about: String,
+  email: {
+    type: String,
+    unique: true,
+    required: true
+  },
 
-  friends: { type: [String], default: [] },
-  friendRequests: { type: [String], default: [] }
+  password: {
+    type: String,
+    required: true
+  },
+
+  /* 🔥 PROFILE FIELDS */
+  name: {
+    type: String,
+    default: ""
+  },
+
+  dept: {
+    type: String,
+    default: ""
+  },
+
+  startYear: {
+    type: Number,
+    default: 2020
+  },
+
+  endYear: {
+    type: Number,
+    default: 2024
+  },
+
+  about: {
+    type: String,
+    default: ""
+  },
+
+  profilePic: {
+    type: String,
+    default: "" // default avatar later
+  },
+
+  friends: {
+    type: [String],
+    default: []
+  },
+
+  friendRequests: {
+    type: [String],
+    default: []
+  }
 });
 
 module.exports = mongoose.model("User", UserSchema);
