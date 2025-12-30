@@ -39,18 +39,16 @@ router.get("/:username", auth, async (req, res) => {
 ========================= */
 router.put("/", auth, async (req, res) => {
   try {
-    const updates = {
-      name: req.body.name,
-      dept: req.body.dept,
-      startYear: req.body.startYear,
-      endYear: req.body.endYear,
-      about: req.body.about,
-      profilePic: req.body.profilePic
-    };
-
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      updates,
+      {
+        name: req.body.name,
+        dept: req.body.dept,
+        startYear: Number(req.body.startYear),
+        endYear: Number(req.body.endYear),
+        about: req.body.about,
+        profilePic: req.body.profilePic
+      },
       { new: true }
     );
 
