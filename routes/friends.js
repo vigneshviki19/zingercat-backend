@@ -14,11 +14,11 @@ router.post("/request/:username", auth, async (req, res) => {
     if (!receiver)
       return res.status(404).json({ message: "User not found" });
 
-    if (receiver.friendRequests.includes(sender._id))
-      return res.json({ message: "Request already sent" });
-
     if (receiver.friends.includes(sender._id))
       return res.json({ message: "Already friends" });
+
+    if (receiver.friendRequests.includes(sender._id))
+      return res.json({ message: "Request already sent" });
 
     receiver.friendRequests.push(sender._id);
     await receiver.save();
@@ -38,6 +38,9 @@ router.post("/accept/:userId", auth, async (req, res) => {
     const me = await User.findById(req.user.id);
     const other = await User.findById(req.params.userId);
 
+    if (!me.friendRequests.includes(other._id))
+      return res.status(400).json({ message: "No request found" });
+
     me.friendRequests = me.friendRequests.filter(
       (id) => id.toString() !== other._id.toString()
     );
@@ -50,6 +53,7 @@ router.post("/accept/:userId", auth, async (req, res) => {
 
     res.json({ message: "Friend added" });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Accept failed" });
   }
 });
@@ -58,10 +62,9 @@ router.post("/accept/:userId", auth, async (req, res) => {
    GET FRIEND REQUESTS
 ========================= */
 router.get("/requests", auth, async (req, res) => {
-  const user = await User.findById(req.user.id).populate(
-    "friendRequests",
-    "username profilePic"
-  );
+  const user = await User.findById(req.user.id)
+    .populate("friendRequests", "username profilePic");
+
   res.json(user.friendRequests);
 });
 
@@ -69,10 +72,9 @@ router.get("/requests", auth, async (req, res) => {
    GET FRIENDS
 ========================= */
 router.get("/", auth, async (req, res) => {
-  const user = await User.findById(req.user.id).populate(
-    "friends",
-    "username profilePic"
-  );
+  const user = await User.findById(req.user.id)
+    .populate("friends", "username profilePic");
+
   res.json(user.friends);
 });
 
