@@ -49,15 +49,9 @@ const UserSchema = new mongoose.Schema({
     default: "" // default avatar later
   },
 
-  friends: {
-    type: [String],
-    default: []
-  },
+ friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  friendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }]
 
-  friendRequests: {
-    type: [String],
-    default: []
-  }
 });
 
 module.exports = mongoose.model("User", UserSchema);
