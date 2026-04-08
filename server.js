@@ -34,6 +34,8 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
+// 🔥 Track active users: { username: socketId }
+const activeUsers = {};
 
 // 🔥 DATABASE
 mongoose
@@ -47,13 +49,16 @@ app.use("/api/posts", postRoutes);
 app.use("/api/friends", friendRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/comments", commentRoutes);
-app.use("/api/comments", require("./routes/comments"));
-
-
 
 // 🔥 SOCKET LOGIC
 io.on("connection", (socket) => {
   console.log("🟢 User connected:", socket.id);
+
+  // 🔥 Register user when they come online
+  socket.on("userOnline", (username) => {
+    activeUsers[username] = socket.id;
+    console.log(`✅ ${username} is online`);
+  });
 
   // PUBLIC CHAT
   socket.on("sendMessage", async (data) => {
@@ -64,24 +69,42 @@ io.on("connection", (socket) => {
     io.emit("receiveMessage", saved);
   });
 
-  // PRIVATE CHAT
+  // PRIVATE CHAT - Join room
   socket.on("joinPrivate", async ({ roomId }) => {
     socket.join(roomId);
-
     const history = await PrivateMessage.find({ roomId }).sort({
       createdAt: 1
     });
-
     socket.emit("privateHistory", history);
   });
 
+  // PRIVATE CHAT - Send message
   socket.on("sendPrivate", async (data) => {
     const saved = await PrivateMessage.create(data);
+    
+    // Send message to chat room
     io.to(data.roomId).emit("receivePrivate", saved);
+
+    // 🔥 Send notification alert to receiver
+    const receiverSocketId = activeUsers[data.receiver];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("unreadAlert", {
+        sender: data.sender,
+        receiver: data.receiver,
+        message: data.message
+      });
+      console.log(`📧 Alert sent to ${data.receiver}`);
+    }
   });
 
   socket.on("disconnect", () => {
-    console.log("🔴 User disconnected:", socket.id);
+    for (const username in activeUsers) {
+      if (activeUsers[username] === socket.id) {
+        delete activeUsers[username];
+        console.log(`🔴 ${username} disconnected`);
+        break;
+      }
+    }
   });
 });
 
